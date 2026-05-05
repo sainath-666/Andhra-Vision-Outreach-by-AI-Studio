@@ -18,6 +18,215 @@ const FadeIn = ({ children, delay = 0, className = "" }: { children: React.React
   </motion.div>
 );
 
+const EMRDemoForm = () => {
+  const [formData, setFormData] = React.useState({
+    name: '',
+    age: '',
+    gender: 'M',
+    od_ucva: '',
+    od_bcva: '',
+    od_pinhole: '',
+    os_ucva: '',
+    os_bcva: '',
+    os_pinhole: '',
+    od_sphere: '',
+    od_cyl: '',
+    od_axis: '',
+    os_sphere: '',
+    os_cyl: '',
+    os_axis: '',
+  });
+
+  const [errors, setErrors] = React.useState<Record<string, string>>({});
+
+  const validateField = (name: string, value: string) => {
+    let error = '';
+    
+    if (value.trim() === '') return error;
+    
+    if (name.includes('ucva') || name.includes('bcva') || name.includes('pinhole')) {
+      if (!/^(6|20)\/\d+$|^CF$|^HM$|^PL$|^NPL$|^-$/i.test(value)) {
+        error = 'Format: 6/6, 20/20, CF, HM...';
+      }
+    } else if (name.includes('sphere') || name.includes('cyl')) {
+      const num = parseFloat(value);
+      if (isNaN(num)) error = 'Invalid num';
+      else if (num < -20 || num > 20) error = '-20 to +20';
+    } else if (name.includes('axis')) {
+      const num = parseInt(value, 10);
+      if (isNaN(num) || !/^\d+$/.test(value)) error = 'Invalid num';
+      else if (num < 0 || num > 180) error = '0 to 180';
+    } else if (name === 'age') {
+      const num = parseInt(value, 10);
+      if (isNaN(num) || num < 0 || num > 120) error = '0 - 120';
+    }
+    return error;
+  };
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({ ...prev, [name]: value }));
+    const error = validateField(name, value);
+    setErrors(prev => ({ ...prev, [name]: error }));
+  };
+
+  const getInputClassName = (name: string, baseClass: string) => {
+    const error = errors[name];
+    if (error) {
+      return `${baseClass} border-red-500 focus:ring-red-500 text-red-900 bg-red-50 focus:border-red-500`;
+    }
+    return `${baseClass} border-slate-200 focus:ring-brand-500`;
+  };
+
+  return (
+    <div className="bg-white rounded-3xl border border-slate-200 shadow-xl overflow-hidden flex flex-col">
+      <div className="bg-slate-50 border-b border-slate-200 px-6 py-4 flex items-center justify-between">
+        <div>
+          <h3 className="font-bold text-slate-900">Standardized Eye Examination Form</h3>
+          <p className="text-xs text-slate-500 font-mono mt-1">EMR_SYSTEM_v2.0 // OFFLINE_CAPABLE</p>
+        </div>
+        <div className="flex gap-2">
+          <div className="w-3 h-3 rounded-full bg-red-400"></div>
+          <div className="w-3 h-3 rounded-full bg-amber-400"></div>
+          <div className="w-3 h-3 rounded-full bg-green-400"></div>
+        </div>
+      </div>
+      
+      <div className="p-6 md:p-8 space-y-8 bg-white h-[600px] overflow-y-auto w-full">
+        {/* Patient Info */}
+        <div>
+          <h4 className="text-sm font-bold text-slate-900 uppercase tracking-wider mb-4 border-b pb-2">1. Patient Information</h4>
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+            <div>
+              <label className="block text-xs font-medium text-slate-500 mb-1">Patient ID (Auto)</label>
+              <input type="text" disabled value="AP-VV-849201" className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm text-slate-700 font-mono" />
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-slate-500 mb-1">Full Name</label>
+              <input type="text" name="name" value={formData.name} onChange={handleChange} placeholder="Enter name" className={getInputClassName('name', "w-full bg-white border rounded-lg px-3 py-2 text-sm text-slate-900 focus:ring-2 outline-none transition-all")} />
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-slate-500 mb-1">Age / Gender</label>
+              <div className="flex gap-2 relative">
+                <input type="number" name="age" value={formData.age} onChange={handleChange} placeholder="Age" className={getInputClassName('age', "w-16 bg-white border rounded-lg px-3 py-2 text-sm text-slate-900 focus:ring-2 outline-none")} />
+                <select name="gender" value={formData.gender} onChange={handleChange} className="flex-1 bg-white border border-slate-200 rounded-lg px-3 py-2 text-sm text-slate-900 focus:ring-2 focus:ring-brand-500 outline-none">
+                  <option>M</option><option>F</option><option>O</option>
+                </select>
+                {errors.age && <span className="absolute -bottom-4 left-0 text-[10px] text-red-500 break-words max-w-[60px]">{errors.age}</span>}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Visual Acuity */}
+        <div className="w-full overflow-x-auto pb-4">
+          <h4 className="text-sm font-bold text-slate-900 uppercase tracking-wider mb-4 border-b pb-2">2. Visual Acuity</h4>
+          <div className="bg-slate-50 rounded-xl overflow-hidden border border-slate-200 min-w-max">
+            <table className="w-full text-left text-sm">
+              <thead className="bg-slate-100 text-slate-600 font-medium">
+                <tr>
+                  <th className="py-2 px-4 border-b">Eye</th>
+                  <th className="py-2 px-4 border-b">UCVA</th>
+                  <th className="py-2 px-4 border-b">BCVA</th>
+                  <th className="py-2 px-4 border-b">Pinhole</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr className="border-b border-slate-100">
+                  <td className="py-3 px-4 font-bold text-brand-700">OD <span className="text-xs font-normal text-slate-500">(Right)</span></td>
+                  <td className="py-2 px-4 align-top">
+                    <input type="text" name="od_ucva" value={formData.od_ucva} onChange={handleChange} placeholder="6/18" className={getInputClassName('od_ucva', "w-16 border rounded px-2 py-1 bg-white focus:ring-2 outline-none")} title={errors.od_ucva}/>
+                    {errors.od_ucva && <div className="text-[10px] text-red-500 leading-[1.1] mt-1 break-words w-16">{errors.od_ucva}</div>}
+                  </td>
+                  <td className="py-2 px-4 align-top">
+                    <input type="text" name="od_bcva" value={formData.od_bcva} onChange={handleChange} placeholder="6/6" className={getInputClassName('od_bcva', "w-16 border rounded px-2 py-1 bg-white focus:ring-2 outline-none")} title={errors.od_bcva}/>
+                    {errors.od_bcva && <div className="text-[10px] text-red-500 leading-[1.1] mt-1 break-words w-16">{errors.od_bcva}</div>}
+                  </td>
+                  <td className="py-2 px-4 align-top">
+                    <input type="text" name="od_pinhole" value={formData.od_pinhole} onChange={handleChange} placeholder="-" className={getInputClassName('od_pinhole', "w-16 border rounded px-2 py-1 bg-white focus:ring-2 outline-none")} title={errors.od_pinhole}/>
+                    {errors.od_pinhole && <div className="text-[10px] text-red-500 leading-[1.1] mt-1 break-words w-16">{errors.od_pinhole}</div>}
+                  </td>
+                </tr>
+                <tr>
+                  <td className="py-3 px-4 font-bold text-brand-700">OS <span className="text-xs font-normal text-slate-500">(Left)</span></td>
+                  <td className="py-2 px-4 align-top">
+                    <input type="text" name="os_ucva" value={formData.os_ucva} onChange={handleChange} placeholder="6/12" className={getInputClassName('os_ucva', "w-16 border rounded px-2 py-1 bg-white focus:ring-2 outline-none")} title={errors.os_ucva}/>
+                    {errors.os_ucva && <div className="text-[10px] text-red-500 leading-[1.1] mt-1 break-words w-16">{errors.os_ucva}</div>}
+                  </td>
+                  <td className="py-2 px-4 align-top">
+                    <input type="text" name="os_bcva" value={formData.os_bcva} onChange={handleChange} placeholder="6/6" className={getInputClassName('os_bcva', "w-16 border rounded px-2 py-1 bg-white focus:ring-2 outline-none")} title={errors.os_bcva}/>
+                    {errors.os_bcva && <div className="text-[10px] text-red-500 leading-[1.1] mt-1 break-words w-16">{errors.os_bcva}</div>}
+                  </td>
+                  <td className="py-2 px-4 align-top">
+                    <input type="text" name="os_pinhole" value={formData.os_pinhole} onChange={handleChange} placeholder="-" className={getInputClassName('os_pinhole', "w-16 border rounded px-2 py-1 bg-white focus:ring-2 outline-none")} title={errors.os_pinhole}/>
+                    {errors.os_pinhole && <div className="text-[10px] text-red-500 leading-[1.1] mt-1 break-words w-16">{errors.os_pinhole}</div>}
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        {/* Refraction */}
+        <div className="w-full overflow-x-auto pb-4">
+          <h4 className="text-sm font-bold text-slate-900 uppercase tracking-wider mb-4 border-b pb-2">3. Refraction</h4>
+          <div className="bg-slate-50 rounded-xl overflow-hidden border border-slate-200 min-w-max">
+            <table className="w-full text-left text-sm">
+              <thead className="bg-slate-100 text-slate-600 font-medium">
+                <tr>
+                  <th className="py-2 px-4 border-b">Eye</th>
+                  <th className="py-2 px-4 border-b">Sphere (SPH)</th>
+                  <th className="py-2 px-4 border-b">Cylinder (CYL)</th>
+                  <th className="py-2 px-4 border-b">Axis</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr className="border-b border-slate-100">
+                  <td className="py-3 px-4 font-bold text-brand-700">OD</td>
+                  <td className="py-2 px-4 align-top">
+                    <input type="text" name="od_sphere" value={formData.od_sphere} onChange={handleChange} placeholder="-1.50" className={getInputClassName('od_sphere', "w-20 border rounded px-2 py-1 bg-white focus:ring-2 outline-none")} title={errors.od_sphere}/>
+                    {errors.od_sphere && <div className="text-[10px] text-red-500 leading-[1.1] mt-1 break-words w-20">{errors.od_sphere}</div>}
+                  </td>
+                  <td className="py-2 px-4 align-top">
+                    <input type="text" name="od_cyl" value={formData.od_cyl} onChange={handleChange} placeholder="-0.50" className={getInputClassName('od_cyl', "w-20 border rounded px-2 py-1 bg-white focus:ring-2 outline-none")} title={errors.od_cyl}/>
+                    {errors.od_cyl && <div className="text-[10px] text-red-500 leading-[1.1] mt-1 break-words w-20">{errors.od_cyl}</div>}
+                  </td>
+                  <td className="py-2 px-4 align-top">
+                    <input type="text" name="od_axis" value={formData.od_axis} onChange={handleChange} placeholder="180" className={getInputClassName('od_axis', "w-20 border rounded px-2 py-1 bg-white focus:ring-2 outline-none")} title={errors.od_axis}/>
+                    {errors.od_axis && <div className="text-[10px] text-red-500 leading-[1.1] mt-1 break-words w-20">{errors.od_axis}</div>}
+                  </td>
+                </tr>
+                <tr>
+                  <td className="py-3 px-4 font-bold text-brand-700">OS</td>
+                  <td className="py-2 px-4 align-top">
+                    <input type="text" name="os_sphere" value={formData.os_sphere} onChange={handleChange} placeholder="-1.25" className={getInputClassName('os_sphere', "w-20 border rounded px-2 py-1 bg-white focus:ring-2 outline-none")} title={errors.os_sphere}/>
+                    {errors.os_sphere && <div className="text-[10px] text-red-500 leading-[1.1] mt-1 break-words w-20">{errors.os_sphere}</div>}
+                  </td>
+                  <td className="py-2 px-4 align-top">
+                    <input type="text" name="os_cyl" value={formData.os_cyl} onChange={handleChange} placeholder="-0.75" className={getInputClassName('os_cyl', "w-20 border rounded px-2 py-1 bg-white focus:ring-2 outline-none")} title={errors.os_cyl}/>
+                    {errors.os_cyl && <div className="text-[10px] text-red-500 leading-[1.1] mt-1 break-words w-20">{errors.os_cyl}</div>}
+                  </td>
+                  <td className="py-2 px-4 align-top">
+                    <input type="text" name="os_axis" value={formData.os_axis} onChange={handleChange} placeholder="175" className={getInputClassName('os_axis', "w-20 border rounded px-2 py-1 bg-white focus:ring-2 outline-none")} title={errors.os_axis}/>
+                    {errors.os_axis && <div className="text-[10px] text-red-500 leading-[1.1] mt-1 break-words w-20">{errors.os_axis}</div>}
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+        
+        {/* Action */}
+        <div className="pt-4 border-t border-slate-100 flex justify-end">
+          <button className={`px-6 py-2 rounded-lg font-medium text-sm transition-all shadow-md ${Object.values(errors).some(e => e !== '') ? 'bg-slate-300 text-slate-500 cursor-not-allowed' : 'bg-brand-600 hover:bg-brand-700 text-white shadow-brand-500/20'}`} disabled={Object.values(errors).some(e => e !== '')}>
+            Save & Transmit Record
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 export default function App() {
   return (
     <div className="min-h-screen bg-brand-50 text-slate-800 font-sans selection:bg-brand-500 selection:text-white">
@@ -307,114 +516,7 @@ export default function App() {
             
             {/* Form UI */}
             <FadeIn>
-              <div className="bg-white rounded-3xl border border-slate-200 shadow-xl overflow-hidden">
-                <div className="bg-slate-50 border-b border-slate-200 px-6 py-4 flex items-center justify-between">
-                  <div>
-                    <h3 className="font-bold text-slate-900">Standardized Eye Examination Form</h3>
-                    <p className="text-xs text-slate-500 font-mono mt-1">EMR_SYSTEM_v2.0 // OFFLINE_CAPABLE</p>
-                  </div>
-                  <div className="flex gap-2">
-                    <div className="w-3 h-3 rounded-full bg-red-400"></div>
-                    <div className="w-3 h-3 rounded-full bg-amber-400"></div>
-                    <div className="w-3 h-3 rounded-full bg-green-400"></div>
-                  </div>
-                </div>
-                
-                <div className="p-6 md:p-8 space-y-8 bg-white h-[600px] overflow-y-auto">
-                  {/* Patient Info */}
-                  <div>
-                    <h4 className="text-sm font-bold text-slate-900 uppercase tracking-wider mb-4 border-b pb-2">1. Patient Information</h4>
-                    <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                      <div>
-                        <label className="block text-xs font-medium text-slate-500 mb-1">Patient ID (Auto)</label>
-                        <input type="text" disabled value="AP-VV-849201" className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm text-slate-700 font-mono" />
-                      </div>
-                      <div>
-                        <label className="block text-xs font-medium text-slate-500 mb-1">Full Name</label>
-                        <input type="text" placeholder="Enter name" className="w-full bg-white border border-slate-200 rounded-lg px-3 py-2 text-sm text-slate-900 focus:ring-2 focus:ring-brand-500 outline-none transition-all" />
-                      </div>
-                      <div>
-                        <label className="block text-xs font-medium text-slate-500 mb-1">Age / Gender</label>
-                        <div className="flex gap-2">
-                          <input type="number" placeholder="Age" className="w-16 bg-white border border-slate-200 rounded-lg px-3 py-2 text-sm text-slate-900" />
-                          <select className="flex-1 bg-white border border-slate-200 rounded-lg px-3 py-2 text-sm text-slate-900">
-                            <option>M</option><option>F</option><option>O</option>
-                          </select>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Visual Acuity */}
-                  <div>
-                    <h4 className="text-sm font-bold text-slate-900 uppercase tracking-wider mb-4 border-b pb-2">2. Visual Acuity</h4>
-                    <div className="bg-slate-50 rounded-xl overflow-hidden border border-slate-200">
-                      <table className="w-full text-left text-sm">
-                        <thead className="bg-slate-100 text-slate-600 font-medium">
-                          <tr>
-                            <th className="py-2 px-4 border-b px-4">Eye</th>
-                            <th className="py-2 px-4 border-b">UCVA</th>
-                            <th className="py-2 px-4 border-b">BCVA</th>
-                            <th className="py-2 px-4 border-b">Pinhole</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          <tr className="border-b border-slate-100">
-                            <td className="py-3 px-4 font-bold text-brand-700">OD <span className="text-xs font-normal text-slate-500">(Right)</span></td>
-                            <td className="py-2 px-4"><input type="text" placeholder="6/18" className="w-16 border rounded px-2 py-1 bg-white"/></td>
-                            <td className="py-2 px-4"><input type="text" placeholder="6/6" className="w-16 border rounded px-2 py-1 bg-white"/></td>
-                            <td className="py-2 px-4"><input type="text" placeholder="-" className="w-16 border rounded px-2 py-1 bg-white"/></td>
-                          </tr>
-                          <tr>
-                            <td className="py-3 px-4 font-bold text-brand-700">OS <span className="text-xs font-normal text-slate-500">(Left)</span></td>
-                            <td className="py-2 px-4"><input type="text" placeholder="6/12" className="w-16 border rounded px-2 py-1 bg-white"/></td>
-                            <td className="py-2 px-4"><input type="text" placeholder="6/6" className="w-16 border rounded px-2 py-1 bg-white"/></td>
-                            <td className="py-2 px-4"><input type="text" placeholder="-" className="w-16 border rounded px-2 py-1 bg-white"/></td>
-                          </tr>
-                        </tbody>
-                      </table>
-                    </div>
-                  </div>
-
-                  {/* Refraction */}
-                  <div>
-                    <h4 className="text-sm font-bold text-slate-900 uppercase tracking-wider mb-4 border-b pb-2">3. Refraction</h4>
-                    <div className="bg-slate-50 rounded-xl overflow-hidden border border-slate-200">
-                      <table className="w-full text-left text-sm">
-                        <thead className="bg-slate-100 text-slate-600 font-medium">
-                          <tr>
-                            <th className="py-2 px-4 border-b">Eye</th>
-                            <th className="py-2 px-4 border-b">Sphere (SPH)</th>
-                            <th className="py-2 px-4 border-b">Cylinder (CYL)</th>
-                            <th className="py-2 px-4 border-b">Axis</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          <tr className="border-b border-slate-100">
-                            <td className="py-3 px-4 font-bold text-brand-700">OD</td>
-                            <td className="py-2 px-4"><input type="text" placeholder="-1.50" className="w-20 border rounded px-2 py-1 bg-white"/></td>
-                            <td className="py-2 px-4"><input type="text" placeholder="-0.50" className="w-20 border rounded px-2 py-1 bg-white"/></td>
-                            <td className="py-2 px-4"><input type="text" placeholder="180" className="w-20 border rounded px-2 py-1 bg-white"/></td>
-                          </tr>
-                          <tr>
-                            <td className="py-3 px-4 font-bold text-brand-700">OS</td>
-                            <td className="py-2 px-4"><input type="text" placeholder="-1.25" className="w-20 border rounded px-2 py-1 bg-white"/></td>
-                            <td className="py-2 px-4"><input type="text" placeholder="-0.75" className="w-20 border rounded px-2 py-1 bg-white"/></td>
-                            <td className="py-2 px-4"><input type="text" placeholder="175" className="w-20 border rounded px-2 py-1 bg-white"/></td>
-                          </tr>
-                        </tbody>
-                      </table>
-                    </div>
-                  </div>
-                  
-                  {/* Action */}
-                  <div className="pt-4 border-t border-slate-100 flex justify-end">
-                    <button className="bg-brand-600 hover:bg-brand-700 text-white px-6 py-2 rounded-lg font-medium text-sm transition-colors shadow-lg shadow-brand-500/20">
-                      Save & Transmit Record
-                    </button>
-                  </div>
-                </div>
-              </div>
+              <EMRDemoForm />
             </FadeIn>
 
             {/* Context */}
